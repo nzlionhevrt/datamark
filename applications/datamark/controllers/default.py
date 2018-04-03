@@ -39,12 +39,13 @@ def mark():
     import os
 
     if db(db.image_list).select(limitby=(0,1)):
-        img_name = db(db.image_list).select(limitby=(0,1)).first().name
+        img_name = db().select(db.image_list.ALL, orderby='<random>', limitby=(0,1))[0].name
 
         class1_button = FORM(INPUT(_type='submit', _value='Первый класс'), _action=URL('submit_mark', vars=dict(img_name=img_name, mark=0)))
         class2_button = FORM(INPUT(_type='submit', _value='Второй класс'), _action=URL('submit_mark', vars=dict(img_name=img_name, mark=1)))
+        skip_button = FORM(INPUT(_type='submit', _value='Пропустить'), _action=URL('submit_mark', vars=dict(img_name=img_name, mark=2)))
 
-        return dict(img_name = img_name, class1_button = class1_button, class2_button = class2_button)
+        return dict(img_name = img_name, class1_button = class1_button, class2_button = class2_button, skip_button = skip_button)
 
     else:
         redirect(URL('null'))
@@ -52,8 +53,14 @@ def mark():
 def submit_mark():
     import os
     db.dataset.insert(name=request.vars.img_name, mark=request.vars.mark)
-    os.rename(os.path.join(request.folder, 'static','unchecked_images', request.vars.img_name),
-              os.path.join(request.folder, 'static','checked_images', request.vars.img_name))
+    try:
+        os.rename(os.path.join(request.folder, 'static','unchecked_images', request.vars.img_name),
+                  os.path.join(request.folder, 'static','checked_images', request.vars.img_name))
+        
+    except FileNotFoundError:
+        db(db.image_list.name == request.vars.img_name).delete()
+        redirect(URL('mark'))
+
     db(db.image_list.name == request.vars.img_name).delete()
     redirect(URL('mark'))
     return dict()
