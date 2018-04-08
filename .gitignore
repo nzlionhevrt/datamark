@@ -34,3 +34,7 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+# just4me
+checked_images
+unchecked_images

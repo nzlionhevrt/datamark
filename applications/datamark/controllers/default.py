@@ -14,11 +14,20 @@ def grid():
     return dict(grid=grid)
 
 def wiki():
-    auth.wikimenu() # add the wiki to the menu
+    auth.wikimenu()
     return auth.wiki()
 
 def user():
     return dict(form=auth())
+
+def stats():
+    
+    images = db(db.image_list).count()
+    first_class = db(db.dataset.mark == 0).count()
+    second_class = db(db.dataset.mark == 1).count()
+    skipped = db(db.dataset.mark == 2).count()
+
+    return dict(images = images, first_class = first_class, second_class = second_class, skipped = skipped)
 
 @auth.requires_membership('admin')
 def refresh():
@@ -28,7 +37,7 @@ def refresh():
     Files = os.listdir('applications/datamark/static/unchecked_images/')
 
     for name in Files:
-        db.image_list.insert(name=name)
+        if db(db.image_list.name == name).count() == 0: db.image_list.insert(name=name)
 
     state = "Succseed!"
 
@@ -56,7 +65,7 @@ def submit_mark():
     try:
         os.rename(os.path.join(request.folder, 'static','unchecked_images', request.vars.img_name),
                   os.path.join(request.folder, 'static','checked_images', request.vars.img_name))
-        
+
     except FileNotFoundError:
         db(db.image_list.name == request.vars.img_name).delete()
         redirect(URL('mark'))
