@@ -95,7 +95,6 @@ def get_data():
             if os.path.isfile(os.path.join(imgs_path, img.name)):
                 image = imageio.imread(os.path.join(imgs_path, img.name))
                 imgs.append(image)
-            db(db.image_list.name == img.name).delete()
 
         data[str(mark)] = imgs
 
