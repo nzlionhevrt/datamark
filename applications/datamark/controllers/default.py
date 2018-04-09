@@ -21,7 +21,7 @@ def user():
     return dict(form=auth())
 
 def stats():
-    
+
     images = db(db.image_list).count()
     first_class = db(db.dataset.mark == 0).count()
     second_class = db(db.dataset.mark == 1).count()
@@ -74,6 +74,50 @@ def submit_mark():
     redirect(URL('mark'))
     return dict()
 
+def get_data():
+
+    import numpy as np
+    import imageio
+    import pickle
+    import os
+
+    data = {}
+
+    imgs_path = os.path.join(request.folder, 'static','checked_images')
+
+    for mark in range(3):
+
+        d = db(db.dataset.mark == mark).select()
+
+        imgs = []
+
+        for img in d:
+            if os.path.isfile(os.path.join(imgs_path, img.name)):
+                image = imageio.imread(os.path.join(imgs_path, img.name))
+                imgs.append(image)
+            db(db.image_list.name == img.name).delete()
+
+        data[str(mark)] = imgs
+
+    pickle_rick_path = os.path.join(request.folder,
+                                    'uploads',
+                                    'data',
+                                    'rick.pickle')
+
+    with open(pickle_rick_path, 'wb') as f:
+        pickle.dump(data, f)
+
+    redirect(URL('pickle_rick'))
+
+    return dict()
+
+def pickle_rick():
+    import os
+    pickle_rick_path = os.path.join(request.folder,
+                                    'uploads',
+                                    'data',
+                                    'rick.pickle')
+    response.stream(pickle_rick_path, attachment=True, filename='rick.pickle')
 
 def null():
     state = "All work is done. Relax."
