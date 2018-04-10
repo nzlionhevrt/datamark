@@ -48,8 +48,8 @@ def mark():
     import os
 
     if db(db.image_list).select(limitby=(0,1)):
-        img_name = db().select(db.image_list.ALL, orderby='<random>', limitby=(0,1))[0].name
 
+        img_name = db().select(db.image_list.ALL, orderby='<random>', limitby=(0,1))[0].name
         class1_button = FORM(INPUT(_type='submit', _value='Первый класс'), _action=URL('submit_mark', vars=dict(img_name=img_name, mark=0)))
         class2_button = FORM(INPUT(_type='submit', _value='Второй класс'), _action=URL('submit_mark', vars=dict(img_name=img_name, mark=1)))
         skip_button = FORM(INPUT(_type='submit', _value='Пропустить'), _action=URL('submit_mark', vars=dict(img_name=img_name, mark=2)))
@@ -60,8 +60,11 @@ def mark():
         redirect(URL('null'))
 
 def submit_mark():
+
     import os
+
     db.dataset.insert(name=request.vars.img_name, mark=request.vars.mark)
+
     try:
         os.rename(os.path.join(request.folder, 'static','unchecked_images', request.vars.img_name),
                   os.path.join(request.folder, 'static','checked_images', request.vars.img_name))
@@ -74,49 +77,47 @@ def submit_mark():
     redirect(URL('mark'))
     return dict()
 
-def get_data():
+def make_archive():
 
-    import numpy as np
-    import imageio
-    import pickle
+    import tarfile
     import os
 
-    data = {}
+    def make_tarfile(output_filename, source_dir):
+        with tarfile.open(output_filename, "w:gz") as tar:
+            tar.add(source_dir, arcname=os.path.basename(source_dir))
 
     imgs_path = os.path.join(request.folder, 'static','checked_images')
 
-    for mark in range(3):
+    tar_file_path = os.path.join(request.folder, 'uploads', 'data', 'rox.tar.gz')
 
-        d = db(db.dataset.mark == mark).select()
-
-        imgs = []
-
-        for img in d:
-            if os.path.isfile(os.path.join(imgs_path, img.name)):
-                image = imageio.imread(os.path.join(imgs_path, img.name))
-                imgs.append(image)
-
-        data[str(mark)] = imgs
-
-    pickle_rick_path = os.path.join(request.folder,
-                                    'uploads',
-                                    'data',
-                                    'rick.pickle')
-
-    with open(pickle_rick_path, 'wb') as f:
-        pickle.dump(data, f)
-
-    redirect(URL('pickle_rick'))
+    make_tarfile(tar_file_path, imgs_path)
 
     return dict()
 
-def pickle_rick():
+def get_archive():
+
     import os
-    pickle_rick_path = os.path.join(request.folder,
-                                    'uploads',
-                                    'data',
-                                    'rick.pickle')
-    response.stream(pickle_rick_path, attachment=True, filename='rick.pickle')
+
+    tar_file_path = os.path.join(request.folder, 'uploads', 'data', 'rox.tar.gz')
+
+    response.stream(tar_file_path, attachment=True, filename='rox.tar.gz')
+
+def get_labels_info():
+
+    import os
+
+    data = {"0": [row.name for row in db(db.dataset.mark==0).select()],
+            "1": [row.name for row in db(db.dataset.mark==1).select()],
+            "2": [row.name for row in db(db.dataset.mark==2).select()]}
+
+    labels_file_path = os.path.join(request.folder, 'uploads', 'data', 'labels.txt')
+
+    with open(labels_file_path, 'w') as File:
+        File.write(str(data))
+
+    response.stream(labels_file_path, attachment=True, filename='labels.txt')
+
+    return dict()
 
 def null():
     state = "All work is done. Relax."
