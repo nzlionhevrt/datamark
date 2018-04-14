@@ -1,0 +1,5 @@
+{{for img in images:}}
+<h5>{{=img.name}}</h5>
+  <img src="{{=URL('static', 'unchecked_images', args=img.name)}}" width=50%/>
+</br>
+{{pass}}

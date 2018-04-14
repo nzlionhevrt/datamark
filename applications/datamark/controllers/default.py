@@ -59,6 +59,10 @@ def mark():
     else:
         redirect(URL('null'))
 
+def check():
+    images = db().select(db.image_list.ALL)
+    return dict(images=images)
+
 def submit_mark():
 
     import os
@@ -88,7 +92,11 @@ def make_archive():
 
     imgs_path = os.path.join(request.folder, 'static','checked_images')
 
+
     tar_file_path = os.path.join(request.folder, 'uploads', 'data', 'rox.tar.gz')
+
+    if not os.path.exists(tar_file_path):
+        os.makedirs(directory)
 
     make_tarfile(tar_file_path, imgs_path)
 
